@@ -15,13 +15,72 @@ const DEFAULT_BOOKMARKS: Bookmark[] = [
   { id: '4', name: 'Reddit', url: 'https://reddit.com', tag: 'COMM' },
 ];
 
+// --- Initial Website Boot Splash Screen ---
+const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
+  const [progress, setProgress] = useState(0);
+  const [logIndex, setLogIndex] = useState(0);
+
+  const logs = [
+    'INITIALIZING NEURAL CORE...',
+    'ALLOCATING MEMORY MATRIX BUFFERS...',
+    'ESTABLISHING OMNIVIEW TELEMETRY LINK...',
+    'SYNCHRONIZING SPEECH SYNTHESIS ENGINE...',
+    'SYSTEM BOOT COMPLETE. ENGAGING CLEV AI...'
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          setTimeout(onComplete, 400);
+          return 100;
+        }
+        return prev + 4;
+      });
+    }, 60);
+
+    const logTimer = setInterval(() => {
+      setLogIndex(prev => (prev < logs.length - 1 ? prev + 1 : prev));
+    }, 500);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(logTimer);
+    };
+  }, []);
+
+  const filledBars = Math.floor(progress / 5);
+  const progressBar = '█'.repeat(filledBars) + '░'.repeat(20 - filledBars);
+
+  return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center font-mono text-cyan-400 p-6 selection:bg-cyan-500/30">
+      <div className="max-w-md w-full space-y-4 text-xs">
+        <div className="border border-cyan-500/40 p-4 rounded bg-cyan-950/20 backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+          <p className="font-bold text-sm tracking-widest text-white mb-2">CLEV AI // SYSTEM BOOT</p>
+          <p className="text-zinc-400">BUILD: v2.0.4-NEURAL</p>
+          <div className="my-4 h-12 flex flex-col justify-end text-cyan-300">
+            <p className="animate-pulse">{'>'} {logs[logIndex]}</p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-zinc-400">
+              <span>BOOT_SEQUENCE</span>
+              <span>{progress}%</span>
+            </div>
+            <p className="tracking-wider text-cyan-400 font-bold">[{progressBar}]</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Multi-Colored Background Shapes FX ---
 const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
   const dotColor = isHackerMode ? 'rgba(34, 197, 94, 0.25)' : 'rgba(6, 182, 212, 0.25)';
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-black">
-      {/* Dot Grid */}
       <div 
         className="absolute inset-0"
         style={{
@@ -44,14 +103,14 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
         transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
       />
 
-      {/* NEW: Glowing Indigo Rectangle */}
+      {/* Glowing Indigo Rectangle */}
       <motion.div
         className="absolute top-1/2 left-12 w-64 h-28 border-2 border-indigo-500/30 rounded-lg shadow-[0_0_25px_rgba(99,102,241,0.15)]"
         animate={{ x: [0, 30, 0], y: [0, -20, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Pink/Magenta Triangle SVG */}
+      {/* Pink/Magenta Triangle */}
       <motion.svg
         viewBox="0 0 100 100"
         className="absolute top-1/3 right-1/4 w-36 h-36 fill-transparent stroke-2 stroke-pink-500/30 drop-shadow-[0_0_10px_rgba(236,72,153,0.2)]"
@@ -73,33 +132,22 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
   );
 };
 
-// --- Terminal Progress Bar & Spinner Loader ---
-const TerminalLoader = ({ accentText }: { accentText: string }) => {
+// --- Braille Query Processing Loader ---
+const BrailleQueryLoader = ({ accentText }: { accentText: string }) => {
   const [frame, setFrame] = useState(0);
-  const [progress, setProgress] = useState(0);
   const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setFrame(f => (f + 1) % spinnerFrames.length);
-      setProgress(p => (p >= 95 ? 95 : p + 5));
-    }, 150);
+    }, 80);
     return () => clearInterval(timer);
   }, []);
 
-  const filledBars = Math.floor(progress / 10);
-  const progressBar = '█'.repeat(filledBars) + '░'.repeat(10 - filledBars);
-
   return (
-    <div className={`space-y-1.5 ${accentText} my-2 p-3 bg-black/60 border border-white/10 rounded-lg font-mono text-xs`}>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-bold animate-spin">{spinnerFrames[frame]}</span>
-        <span className="font-bold tracking-wider">NEURAL LINK QUERYING...</span>
-        <span className="ml-auto font-bold">{progress}%</span>
-      </div>
-      <div className="tracking-widest text-[10px] opacity-80">
-        [{progressBar}] ALLOCATING BUFFERS & MEMORY MATRIX
-      </div>
+    <div className={`flex items-center gap-2 ${accentText} my-2 p-3 bg-black/60 border border-white/10 rounded-lg font-mono text-xs animate-pulse`}>
+      <span className="text-base font-bold">{spinnerFrames[frame]}</span>
+      <span className="tracking-wider">NEURAL LINK PROCESSING DIRECTIVE...</span>
     </div>
   );
 };
@@ -154,16 +202,18 @@ const LiveFeedPanel = ({ isOpen, toggle, isHackerMode }: { isOpen: boolean; togg
 };
 
 export default function App() {
+  const [isBooting, setIsBooting] = useState(true);
   const [mode, setMode] = useState<'home' | 'clev'>('home');
   const [isHackerMode, setIsHackerMode] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [speechEnabled, setSpeechEnabled] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [clevInput, setClevInput] = useState('');
   const [history, setHistory] = useState([
-    { role: 'system', text: '>> CLEV OS v2.0 initialized.' },
-    { role: 'system', text: '>> Neural memory matrix loaded. Type "help" for directives.' }
+    { role: 'system', text: '>> CLEV AI v2.0 initialized.' },
+    { role: 'system', text: '>> Neural memory loaded. Voice synthesis ready. Type "help" for directives.' }
   ]);
 
   // Bookmarks State
@@ -196,6 +246,30 @@ export default function App() {
     return 'GOOD NIGHT';
   };
 
+  // JARVIS-inspired Voice Engine (Text to Speech)
+  const speakText = (text: string) => {
+    if (!speechEnabled || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+
+    // Clean text for natural speech
+    const cleanSpeech = text
+      .replace(/^>>\s*/, '')
+      .replace(/[\[\]\(\)\/\\#\*\-_>]/g, ' ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+    utterance.rate = 1.0;
+    utterance.pitch = 0.95; // Deep/Calm tone
+
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(
+      v => v.lang.includes('en') && (v.name.includes('UK') || v.name.includes('Daniel') || v.name.includes('Male') || v.name.includes('Google UK English Male'))
+    );
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    window.speechSynthesis.speak(utterance);
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -213,7 +287,7 @@ export default function App() {
     endOfHistoryRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, mode, isLoading]);
 
-  // Keyboard Navigation (Arrow Keys Switch Modes)
+  // Keyboard Navigation (Arrow Keys)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -267,13 +341,13 @@ export default function App() {
       ? `KNOWN USER MEMORIES:\n${memories.map(m => `- ${m}`).join('\n')}`
       : 'NO MEMORIES STORED YET.';
 
-    const systemInstruction = `You are CLEV, an intelligent, sharp, cyberpunk terminal AI assistant.
+    const systemInstruction = `You are CLEV, a sharp, intelligent, JARVIS-inspired AI assistant.
 ${memoryContext}
 
 Rules:
-1. Speak intelligently, clearly, and directly without AI boilerplate or filler.
-2. Do NOT use markdown syntax like asterisks (bold) or hashes (headers). Clean text formatted for terminal screens only.
-3. Keep responses smart, concise, and helpful.
+1. Speak clearly, politely yet direct, smart, and with calm confidence.
+2. Do NOT use markdown symbols like asterisks (**bold**) or hashes (###). Output clean CLI terminal text.
+3. Keep responses concise and focused.
 4. If the user explicitly asks you to remember something, end your response with: [REMEMBER: <fact to store>]`;
 
     try {
@@ -310,7 +384,7 @@ Rules:
     }
   };
 
-  // --- Terminal Command Dispatcher (Includes Easter Eggs) ---
+  // --- Terminal Command Dispatcher ---
   const handleClevSubmit = async () => {
     if (!clevInput.trim() || isLoading) return;
 
@@ -320,83 +394,78 @@ Rules:
     setHistory(prev => [...prev, { role: 'user', text: `> ${userCommand}` }]);
     setClevInput('');
 
-    // EASTER EGG 1: Help Directive
+    // EASTER EGG 1: JARVIS Reference
+    if (cleanCmd.includes('jarvis') || cleanCmd.includes('stark') || cleanCmd === 'sir') {
+      const jarvisText = '>> At your service, Sir. While I am CLEV, I hold high respect for Mr. Stark\'s architecture. All core systems operational.';
+      setHistory(prev => [...prev, { role: 'system', text: jarvisText }]);
+      speakText(jarvisText);
+      return;
+    }
+
+    // EASTER EGG 2: Mentalist Reference (Patrick Jane & Red John)
+    if (cleanCmd.includes('mentalist') || cleanCmd.includes('patrick jane') || cleanCmd.includes('red john') || cleanCmd.includes('tea')) {
+      const mentalistText = '>> "There is no such thing as magic. Only observation, manipulation, and a warm cup of Lapsang souchong tea." -- Mentalist Protocol Engaged.';
+      setHistory(prev => [...prev, { role: 'system', text: mentalistText }]);
+      speakText(mentalistText);
+      return;
+    }
+
+    // EASTER EGG 3: Help Directive
     if (cleanCmd === 'help' || cleanCmd === 'commands') {
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> CLEV DIRECTIVE CATALOG:\n   - hacker mode / exit\n   - memory list / clear / add <fact>\n   - omniview (Hardware HUD Link)\n   - vinyl (Audio Player Status)\n   - ember (Manuscript Protocol)\n   - matrix / sudo / 1000-7' 
-      }]);
+      const helpText = '>> CLEV AI DIRECTIVE CATALOG:\n   - jarvis / mentalist (Special protocols)\n   - hacker mode / exit\n   - memory list / clear / add <fact>\n   - omniview (Hardware HUD Link)\n   - vinyl (Audio Player Node)\n   - ember (Manuscript Protocol)\n   - 1000-7 / matrix / sudo';
+      setHistory(prev => [...prev, { role: 'system', text: helpText }]);
+      speakText('Catalog printed to terminal window.');
       return;
     }
 
-    // EASTER EGG 2: OmniView Hardware Link
+    // EASTER EGG 4: OmniView Hardware Link
     if (cleanCmd === 'omniview') {
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> [OMNIVIEW HUD NODE]\n   Microcontroller: ESP32-S3\n   Voice Link: ONLINE\n   BLE Telemetry: SYNCED\n   Status: Smart glass HUD overlay operational.' 
-      }]);
+      const omniText = '>> [OMNIVIEW HARDWARE LINK]\n   Microcontroller: ESP32-S3\n   Voice Assistant: CLEV_LINKED\n   BLE Telemetry: SYNCED\n   Status: Smart glass HUD overlay operational.';
+      setHistory(prev => [...prev, { role: 'system', text: omniText }]);
+      speakText(omniText);
       return;
     }
 
-    // EASTER EGG 3: Vinyl Music Player
+    // EASTER EGG 5: Vinyl Music Player
     if (cleanCmd === 'vinyl') {
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> [VINYL PLAYER NODE]\n   Audio Engine: Active\n   Current Rotation:\n   1. C418 - Subwoofer Lullaby\n   2. Radiohead - Motion Picture Soundtrack\n   3. Radiohead - Everything In Its Right Place' 
-      }]);
+      const vinylText = '>> [VINYL PLAYER NODE]\n   Audio Engine: Active\n   Current Rotation: C418 and Radiohead tracklists loaded.';
+      setHistory(prev => [...prev, { role: 'system', text: vinylText }]);
+      speakText(vinylText);
       return;
     }
 
-    // EASTER EGG 4: Enveloped Ember
+    // EASTER EGG 6: Enveloped Ember
     if (cleanCmd === 'ember' || cleanCmd === 'enveloped ember') {
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> [ENVELOPED EMBER PROTOCOL]\n   "In the cold hush of the dying ash, the ember still burns inside..."\n   Manuscript Status: In progress.' 
-      }]);
+      const emberText = '>> [ENVELOPED EMBER PROTOCOL]\n   "In the cold hush of the dying ash, the ember still burns inside..."';
+      setHistory(prev => [...prev, { role: 'system', text: emberText }]);
+      speakText(emberText);
       return;
     }
 
-    // EASTER EGG 5: Tokyo Ghoul
+    // EASTER EGG 7: Tokyo Ghoul
     if (cleanCmd === '1000-7' || cleanCmd === '1000 - 7' || cleanCmd === 'kaneki') {
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> 993... 986... 979...\n   [ANTEIKU DIRECTIVE OVERRIDE: One-Eyed King recognized.]' 
-      }]);
+      const ghoulText = '>> 993... 986... 979... Anteiku override engaged.';
+      setHistory(prev => [...prev, { role: 'system', text: ghoulText }]);
+      speakText(ghoulText);
       return;
     }
 
-    // EASTER EGG 6: Sudo Override
-    if (cleanCmd.startsWith('sudo')) {
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> CRITICAL WARNING: ROOT ACCESS ATTEMPT DENIED.\n   This incident will be reported to the system administrator.' 
-      }]);
-      return;
-    }
-
-    // EASTER EGG 7: Matrix Mode
-    if (cleanCmd === 'matrix') {
+    // Local Commands
+    if (cleanCmd === 'hacker mode') {
       setIsHackerMode(true);
       setPanelOpen(true);
-      setHistory(prev => [...prev, { 
-        role: 'system', 
-        text: '>> [MATRIX OVERRIDE] Following the white rabbit...\n   01000011 01001100 01000101 01010110' 
-      }]);
+      const msg = '>> INITIATING HACKER MODE. GREEN THEME ENGAGED.';
+      setHistory(prev => [...prev, { role: 'system', text: msg }]);
+      speakText(msg);
       return;
     }
 
-    // Standard Commands: Hacker Mode
-    if (cleanCmd === 'hacker mode' || cleanCmd === 'enable hacker mode') {
-      setIsHackerMode(true);
-      setPanelOpen(true);
-      setHistory(prev => [...prev, { role: 'system', text: '>> INITIATING HACKER MODE. GREEN THEME ENGAGED. LIVE NETWORK FEED UNLOCKED.' }]);
-      return;
-    }
-
-    if (cleanCmd === 'exit hacker mode' || cleanCmd === 'disable hacker mode' || cleanCmd === 'reset' || cleanCmd === 'exit') {
+    if (cleanCmd === 'exit hacker mode' || cleanCmd === 'exit' || cleanCmd === 'reset') {
       setIsHackerMode(false);
       setPanelOpen(false);
-      setHistory(prev => [...prev, { role: 'system', text: '>> DEACTIVATING HACKER MODE. RESTORING STANDARD PARAMETERS.' }]);
+      const msg = '>> DEACTIVATING HACKER MODE. RESTORING STANDARD PARAMETERS.';
+      setHistory(prev => [...prev, { role: 'system', text: msg }]);
+      speakText(msg);
       return;
     }
 
@@ -405,31 +474,16 @@ Rules:
       return;
     }
 
-    // Memory Commands
     if (cleanCmd === 'memory list' || cleanCmd === 'memories') {
       const memList = memories.length > 0
         ? memories.map((m, i) => `   [${i + 1}] ${m}`).join('\n')
         : '   No stored memories.';
       setHistory(prev => [...prev, { role: 'system', text: `>> ACTIVE MEMORY MATRIX:\n${memList}` }]);
+      speakText(`Active memory matrix loaded. You have ${memories.length} stored memories.`);
       return;
     }
 
-    if (cleanCmd === 'memory clear') {
-      setMemories([]);
-      setHistory(prev => [...prev, { role: 'system', text: '>> MEMORY MATRIX WIPED.' }]);
-      return;
-    }
-
-    if (cleanCmd.startsWith('memory add ')) {
-      const fact = userCommand.slice(11).trim();
-      if (fact) {
-        setMemories(prev => [...prev, fact]);
-        setHistory(prev => [...prev, { role: 'system', text: `>> MEMORY STORED: "${fact}"` }]);
-      }
-      return;
-    }
-
-    // --- Execute AI Query with Mandatory 3s Loader ---
+    // --- AI Query Execution ---
     setIsLoading(true);
     const minLoaderDelay = new Promise(resolve => setTimeout(resolve, 3000));
     
@@ -440,11 +494,16 @@ Rules:
 
     setIsLoading(false);
     setHistory(prev => [...prev, { role: 'system', text: aiResponse }]);
+    speakText(aiResponse);
   };
 
   const accentText = isHackerMode ? 'text-green-400' : 'text-cyan-400';
   const accentBorder = isHackerMode ? 'border-green-500/40' : 'border-cyan-500/40';
   const accentGlow = isHackerMode ? 'focus-within:border-green-400/80 shadow-[0_0_15px_rgba(34,197,94,0.15)]' : 'focus-within:border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.15)]';
+
+  if (isBooting) {
+    return <BootLoader onComplete={() => setIsBooting(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white font-mono overflow-hidden relative selection:bg-white/20">
@@ -453,8 +512,8 @@ Rules:
 
       <main className="relative z-10 max-w-4xl mx-auto h-screen flex flex-col p-6">
         
-        {/* MODE SWITCHER */}
-        <div className="flex flex-col items-center justify-center mt-2 mb-6">
+        {/* TOP BAR SWITCHER & VOICE TOGGLE */}
+        <div className="flex flex-col items-center justify-center mt-2 mb-6 gap-3">
           <div className={`flex items-center gap-2 p-1.5 rounded-full border bg-black/60 backdrop-blur-md ${accentBorder}`}>
             <button
               onClick={() => setMode('home')}
@@ -478,6 +537,15 @@ Rules:
               [ CLEV_AI ]
             </button>
           </div>
+
+          <button
+            onClick={() => setSpeechEnabled(!speechEnabled)}
+            className={`text-[10px] tracking-widest px-3 py-1 border rounded-full bg-black/60 backdrop-blur-md cursor-pointer transition-all ${
+              speechEnabled ? `${accentBorder} ${accentText}` : 'border-zinc-800 text-zinc-600'
+            }`}
+          >
+            🔊 AUDIO: {speechEnabled ? 'ACTIVE (JARVIS VOICE)' : 'MUTED'}
+          </button>
         </div>
 
         {/* VIEW CONTENT */}
@@ -499,7 +567,7 @@ Rules:
                   {currentTime.toLocaleTimeString()}
                 </h2>
                 <p className="text-xs mt-2 tracking-widest text-zinc-500">
-                  SYSTEM_STATUS // OPERATIONAL
+                  SYSTEM_AI // OPERATIONAL
                 </p>
               </div>
 
@@ -603,7 +671,7 @@ Rules:
               <div className="mb-4 flex justify-between items-center">
                 <div>
                   <h1 className={`text-xl font-bold tracking-widest ${accentText}`}>
-                    CLEV // SYSTEM_OS
+                    CLEV // SYSTEM_AI
                   </h1>
                   <p className="text-xs text-zinc-500">DIRECTIVE_BASED_AI_NODE</p>
                 </div>
@@ -623,7 +691,7 @@ Rules:
                   </p>
                 ))}
 
-                {isLoading && <TerminalLoader accentText={accentText} />}
+                {isLoading && <BrailleQueryLoader accentText={accentText} />}
                 <div ref={endOfHistoryRef} />
               </div>
 
@@ -634,7 +702,7 @@ Rules:
                   value={clevInput}
                   onChange={(e) => setClevInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleClevSubmit()}
-                  placeholder={isLoading ? "Neural network processing..." : "Execute directive... (Try 'help' or 'omniview')"}
+                  placeholder={isLoading ? "Neural processing..." : "Execute directive... (Try 'jarvis', 'mentalist', or 'help')"}
                   disabled={isLoading}
                   className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-zinc-600 text-white disabled:opacity-50"
                   autoFocus
