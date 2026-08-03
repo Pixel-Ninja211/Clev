@@ -43,8 +43,8 @@ function AiTerminal() {
     >
       <div className="text-xs text-zinc-500 mb-4 tracking-widest border-b border-white/10 pb-2">NEURAL_LINK_TERMINAL</div>
       <div className="flex-1 overflow-y-auto space-y-3 text-sm text-zinc-300">
-        <p className="text-cyan-500">>> Establishing secure connection...</p>
-        <p className="text-cyan-500">>> CLEV AI Online. Awaiting parameters.</p>
+        <p className="text-cyan-500">{">> Establishing secure connection..."}</p>
+        <p className="text-cyan-500">{">> CLEV AI Online. Awaiting parameters."}</p>
       </div>
       <div className="mt-4 flex gap-3 items-center bg-white/5 rounded-lg p-3 border border-white/10 transition-colors focus-within:border-white/30">
         <span className="text-zinc-500 animate-pulse">■</span>
