@@ -78,7 +78,7 @@ const LiveFeedPanel = ({ isOpen, toggle, isHackerMode }: { isOpen: boolean; togg
         className={`absolute -left-8 top-1/2 -translate-y-1/2 w-8 h-16 bg-black/80 backdrop-blur-md border-y border-l flex items-center justify-center cursor-pointer hover:bg-white/10
         ${isHackerMode ? 'border-green-500/40 text-green-400' : 'border-cyan-500/40 text-cyan-400'}`}
       >
-        {isOpen ? {">"} : {"<"}}
+        {isOpen ? '>' : '<'}
       </button>
 
       <div className="p-4 flex flex-col h-full space-y-4">
