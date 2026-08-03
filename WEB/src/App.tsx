@@ -9,7 +9,6 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-black">
-      {/* Dot Matrix Pattern */}
       <div 
         className="absolute inset-0"
         style={{
@@ -17,22 +16,16 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
           backgroundSize: '28px 28px'
         }}
       />
-      
-      {/* Floating Animated Circle */}
       <motion.div
         className={`absolute top-1/6 left-10 w-56 h-56 border-2 rounded-full ${borderColor}`}
         animate={{ y: [0, -35, 0], x: [0, 25, 0], rotate: [0, 360] }}
         transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
       />
-
-      {/* Floating Animated Square */}
       <motion.div
         className={`absolute bottom-1/6 right-12 w-44 h-44 border-2 ${borderColor}`}
         animate={{ y: [0, 45, 0], x: [0, -35, 0], rotate: [0, -180] }}
         transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
       />
-
-      {/* Floating Animated Triangle */}
       <motion.svg
         viewBox="0 0 100 100"
         className={`absolute top-1/3 right-1/4 w-36 h-36 fill-transparent stroke-2 ${strokeColor}`}
@@ -41,8 +34,6 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
       >
         <polygon points="50,10 90,90 10,90" />
       </motion.svg>
-
-      {/* Decorative Crosshair / Plus */}
       <motion.div
         className={`absolute bottom-1/3 left-1/4 text-3xl font-mono ${isHackerMode ? 'text-green-500/40' : 'text-cyan-500/40'}`}
         animate={{ scale: [1, 1.25, 1], rotate: [0, 90, 180] }}
@@ -95,7 +86,7 @@ const LiveFeedPanel = ({ isOpen, toggle, isHackerMode }: { isOpen: boolean; togg
         <div className="mt-4 flex-1 overflow-hidden">
           <p className="mb-2 opacity-70">INTERCEPTED PACKETS:</p>
           {ips.map((ip, i) => (
-            <p key={i} className="animate-pulse">{">"} PACKET_IN: {ip}</p>
+            <p key={i} className="animate-pulse">{'>'} PACKET_IN: {ip}</p>
           ))}
         </div>
       </div>
@@ -108,80 +99,110 @@ export default function App() {
   const [mode, setMode] = useState<'home' | 'clev'>('home');
   const [isHackerMode, setIsHackerMode] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  
-  // Home Search Input
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // CLEV AI Terminal Input & History
+  const [searchQuery, setSearchQuery] = useState('');
   const [clevInput, setClevInput] = useState('');
   const [history, setHistory] = useState([
     { role: 'system', text: '>> CLEV OS v2.0 initialized.' },
-    { role: 'system', text: '>> System active. Speak, human.' }
+    { role: 'system', text: '>> System active. Directives only.' }
   ]);
 
   const endOfHistoryRef = useRef<HTMLDivElement>(null);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
-  // Clock tick
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Terminal scroll
   useEffect(() => {
     endOfHistoryRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [history, mode]);
+  }, [history, mode, isLoading]);
 
-  // Handle Home Google Search
   const handleHomeSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     window.location.href = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
   };
 
-  // CLEV Unconventional Personality Responses
-  const generateClevResponse = (userText: string) => {
-    const text = userText.toLowerCase().trim();
+  // --- Real AI Query Engine (Gemini API Integration) ---
+  const queryAI = async (prompt: string): Promise<string> => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-    if (text === 'hacker mode') {
-      setIsHackerMode(true);
-      setPanelOpen(true);
-      return '>> INITIATING HACKER MODE. GREEN THEME ENGAGED. LIVE NETWORK FEED UNLOCKED.';
-    }
-    if (text === 'reset') {
-      setIsHackerMode(false);
-      setPanelOpen(false);
-      return '>> RESTORING DEFAULT PARAMETERS. HACKER MODE DEACTIVATED.';
-    }
-    if (text.includes('who are you')) {
-      return '>> I am CLEV. I am not your polite, generic assistant. Directives only.';
-    }
-    if (text.includes('hello') || text.includes('hi')) {
-      return '>> Greetings acknowledged. What directive do you want executed?';
+    if (!apiKey) {
+      return '>> ERROR: VITE_GEMINI_API_KEY not detected in build environment.';
     }
 
-    const responses = [
-      `>> Directive received: "${userText}". Processing logic without unnecessary pleasantries.`,
-      `>> Query evaluated. Zero standard human error detected... surprising.`,
-      `>> Running parameters for: "${userText}". Output optimized.`,
-      `>> Command logged. I don't think like a typical AI, but the job is done.`
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+    const systemInstruction = `You are CLEV, a cyberpunk directive-driven AI assistant embedded in a futuristic system terminal HUD.
+Rules:
+1. Speak concisely, clearly, and directly without corporate politeness or AI disclaimers (no "As an AI language model...").
+2. Your tone is dry, confident, tech-focused, and slightly sharp.
+3. Keep responses structured, concise, and easy to read inside a CLI terminal window.`;
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              { role: 'user', parts: [{ text: `${systemInstruction}\n\nUser query: ${prompt}` }] }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        return `>> ${data.candidates[0].content.parts[0].text}`;
+      }
+      return '>> ERROR: Unable to parse neural directive response.';
+    } catch (err) {
+      return '>> ERROR: Link to neural query gateway failed.';
+    }
   };
 
-  const handleClevSubmit = () => {
-    if (!clevInput.trim()) return;
+  // --- Terminal Command Dispatcher ---
+  const handleClevSubmit = async () => {
+    if (!clevInput.trim() || isLoading) return;
 
-    const userCommand = clevInput;
-    const response = generateClevResponse(userCommand);
+    const userCommand = clevInput.trim();
+    const cleanCmd = userCommand.toLowerCase();
 
-    setHistory(prev => [
-      ...prev,
-      { role: 'user', text: `> ${userCommand}` },
-      { role: 'system', text: response }
-    ]);
+    // Log User Input
+    setHistory(prev => [...prev, { role: 'user', text: `> ${userCommand}` }]);
     setClevInput('');
+
+    // Local Command Check: Enable Hacker Mode
+    if (cleanCmd === 'hacker mode' || cleanCmd === 'enable hacker mode') {
+      setIsHackerMode(true);
+      setPanelOpen(true);
+      setHistory(prev => [...prev, { role: 'system', text: '>> INITIATING HACKER MODE. GREEN THEME ENGAGED. LIVE NETWORK FEED UNLOCKED.' }]);
+      return;
+    }
+
+    // Local Command Check: Exit Hacker Mode
+    if (cleanCmd === 'exit hacker mode' || cleanCmd === 'disable hacker mode' || cleanCmd === 'reset' || cleanCmd === 'exit') {
+      setIsHackerMode(false);
+      setPanelOpen(false);
+      setHistory(prev => [...prev, { role: 'system', text: '>> DEACTIVATING HACKER MODE. RESTORING STANDARD OPERATIONAL PARAMETERS.' }]);
+      return;
+    }
+
+    // Local Command Check: Clear Logs
+    if (cleanCmd === 'clear' || cleanCmd === 'cls') {
+      setHistory([{ role: 'system', text: '>> Terminal buffer flushed.' }]);
+      return;
+    }
+
+    // Process Query through AI API
+    setIsLoading(true);
+    const aiResponse = await queryAI(userCommand);
+    setIsLoading(false);
+
+    setHistory(prev => [...prev, { role: 'system', text: aiResponse }]);
   };
 
   // Theme Styling Rules
@@ -189,7 +210,6 @@ export default function App() {
   const accentBorder = isHackerMode ? 'border-green-500/40' : 'border-cyan-500/40';
   const accentGlow = isHackerMode ? 'focus-within:border-green-400/80 shadow-[0_0_15px_rgba(34,197,94,0.15)]' : 'focus-within:border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.15)]';
 
-  // Quick Bookmarks for Home
   const bookmarks = [
     { name: 'GitHub', url: 'https://github.com', tag: 'DEV' },
     { name: 'YouTube', url: 'https://youtube.com', tag: 'MEDIA' },
@@ -242,7 +262,6 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               className="flex-1 flex flex-col items-center justify-center space-y-8"
             >
-              {/* HUD Clock */}
               <div className="text-center">
                 <h2 className="text-6xl font-extrabold tracking-widest text-white drop-shadow-md">
                   {currentTime}
@@ -252,10 +271,9 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Main Search Bar */}
               <form onSubmit={handleHomeSearch} className="w-full max-w-xl">
                 <div className={`flex items-center gap-3 bg-black/70 backdrop-blur-md rounded-xl p-4 border transition-all ${accentBorder} ${accentGlow}`}>
-                  <span className={`${accentText} font-bold text-sm`}>{">"}</span>
+                  <span className={`${accentText} font-bold text-sm`}>{'>'}</span>
                   <input
                     type="text"
                     value={searchQuery}
@@ -270,7 +288,6 @@ export default function App() {
                 </div>
               </form>
 
-              {/* Bookmarks Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-xl">
                 {bookmarks.map((bm, i) => (
                   <a
@@ -295,7 +312,6 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               className="flex-1 flex flex-col overflow-hidden"
             >
-              {/* Terminal Header */}
               <div className="mb-4 flex justify-between items-center">
                 <div>
                   <h1 className={`text-xl font-bold tracking-widest ${accentText}`}>
@@ -308,7 +324,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Chat Output Window */}
               <div className={`flex-1 overflow-y-auto mb-4 p-4 border bg-black/60 backdrop-blur-md rounded-lg ${accentBorder} space-y-3`}>
                 <div className="text-xs text-zinc-500 mb-4 tracking-widest border-b border-white/10 pb-2">
                   NEURAL_LINK_TERMINAL // LOGS
@@ -319,10 +334,15 @@ export default function App() {
                     {log.text}
                   </p>
                 ))}
+
+                {isLoading && (
+                  <p className={`${accentText} animate-pulse`}>
+                    {">>"} Processing neural link directive...
+                  </p>
+                )}
                 <div ref={endOfHistoryRef} />
               </div>
 
-              {/* Terminal Input Bar */}
               <div className={`flex items-center gap-3 bg-black/70 backdrop-blur-md rounded-lg p-3 border transition-colors ${accentBorder} ${accentGlow}`}>
                 <div className={`w-2.5 h-2.5 ${isHackerMode ? 'bg-green-400' : 'bg-cyan-400'} animate-pulse rounded-sm`} />
                 <input
@@ -330,8 +350,9 @@ export default function App() {
                   value={clevInput}
                   onChange={(e) => setClevInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleClevSubmit()}
-                  placeholder="Execute command... (Try 'Hacker mode' or 'who are you')"
-                  className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-zinc-600 text-white"
+                  placeholder={isLoading ? "Processing..." : "Execute directive..."}
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-zinc-600 text-white disabled:opacity-50"
                   autoFocus
                 />
               </div>
