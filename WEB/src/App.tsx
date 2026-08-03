@@ -79,7 +79,7 @@ const LiveFeedPanel = ({ isOpen, toggle, isHackerMode }: { isOpen: boolean, togg
         <div className="mt-4">
           <p className="mb-2 opacity-70">NETWORK TRAFFIC:</p>
           {ips.map((ip, i) => (
-            <p key={i} className="animate-pulse">> PACKET_INTERCEPT: {ip}</p>
+            <p key={i} className="animate-pulse">{">"} PACKET_INTERCEPT: {ip}</p>
           ))}
         </div>
       </div>
