@@ -31,11 +31,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./Clev/WEB
+        working-directory: ./WEB
 
       - name: Build
         run: npm run build
-        working-directory: ./Clev/WEB
+        working-directory: ./WEB
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -43,7 +43,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './Clev/WEB/dist'
+          path: './WEB/dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
