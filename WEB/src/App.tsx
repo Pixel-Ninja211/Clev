@@ -15,14 +15,13 @@ const DEFAULT_BOOKMARKS: Bookmark[] = [
   { id: '4', name: 'Reddit', url: 'https://reddit.com', tag: 'COMM' },
 ];
 
-// --- Background FX ---
+// --- Multi-Colored Background Shapes FX ---
 const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
-  const strokeColor = isHackerMode ? 'stroke-green-500/30' : 'stroke-cyan-500/30';
-  const borderColor = isHackerMode ? 'border-green-500/30' : 'border-cyan-500/30';
   const dotColor = isHackerMode ? 'rgba(34, 197, 94, 0.25)' : 'rgba(6, 182, 212, 0.25)';
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-black">
+      {/* Dot Grid */}
       <div 
         className="absolute inset-0"
         style={{
@@ -30,31 +29,77 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
           backgroundSize: '28px 28px'
         }}
       />
+      
+      {/* Neon Purple Circle */}
       <motion.div
-        className={`absolute top-1/6 left-10 w-56 h-56 border-2 rounded-full ${borderColor}`}
+        className="absolute top-1/6 left-10 w-56 h-56 border-2 rounded-full border-purple-500/30 shadow-[0_0_25px_rgba(168,85,247,0.15)]"
         animate={{ y: [0, -35, 0], x: [0, 25, 0], rotate: [0, 360] }}
         transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
       />
+
+      {/* Warm Amber Square */}
       <motion.div
-        className={`absolute bottom-1/6 right-12 w-44 h-44 border-2 ${borderColor}`}
+        className="absolute bottom-1/6 right-12 w-44 h-44 border-2 border-amber-500/30 shadow-[0_0_25px_rgba(245,158,11,0.15)]"
         animate={{ y: [0, 45, 0], x: [0, -35, 0], rotate: [0, -180] }}
         transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
       />
+
+      {/* NEW: Glowing Indigo Rectangle */}
+      <motion.div
+        className="absolute top-1/2 left-12 w-64 h-28 border-2 border-indigo-500/30 rounded-lg shadow-[0_0_25px_rgba(99,102,241,0.15)]"
+        animate={{ x: [0, 30, 0], y: [0, -20, 0], rotate: [0, 10, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Pink/Magenta Triangle SVG */}
       <motion.svg
         viewBox="0 0 100 100"
-        className={`absolute top-1/3 right-1/4 w-36 h-36 fill-transparent stroke-2 ${strokeColor}`}
+        className="absolute top-1/3 right-1/4 w-36 h-36 fill-transparent stroke-2 stroke-pink-500/30 drop-shadow-[0_0_10px_rgba(236,72,153,0.2)]"
         animate={{ y: [0, -50, 0], rotate: [0, 180, 360] }}
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
       >
         <polygon points="50,10 90,90 10,90" />
       </motion.svg>
+
+      {/* Gold Plus Crosshair */}
       <motion.div
-        className={`absolute bottom-1/3 left-1/4 text-3xl font-mono ${isHackerMode ? 'text-green-500/40' : 'text-cyan-500/40'}`}
+        className="absolute bottom-1/3 left-1/4 text-3xl font-mono text-yellow-400/40"
         animate={{ scale: [1, 1.25, 1], rotate: [0, 90, 180] }}
         transition={{ duration: 16, repeat: Infinity }}
       >
         +
       </motion.div>
+    </div>
+  );
+};
+
+// --- Terminal Progress Bar & Spinner Loader ---
+const TerminalLoader = ({ accentText }: { accentText: string }) => {
+  const [frame, setFrame] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFrame(f => (f + 1) % spinnerFrames.length);
+      setProgress(p => (p >= 95 ? 95 : p + 5));
+    }, 150);
+    return () => clearInterval(timer);
+  }, []);
+
+  const filledBars = Math.floor(progress / 10);
+  const progressBar = '█'.repeat(filledBars) + '░'.repeat(10 - filledBars);
+
+  return (
+    <div className={`space-y-1.5 ${accentText} my-2 p-3 bg-black/60 border border-white/10 rounded-lg font-mono text-xs`}>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-bold animate-spin">{spinnerFrames[frame]}</span>
+        <span className="font-bold tracking-wider">NEURAL LINK QUERYING...</span>
+        <span className="ml-auto font-bold">{progress}%</span>
+      </div>
+      <div className="tracking-widest text-[10px] opacity-80">
+        [{progressBar}] ALLOCATING BUFFERS & MEMORY MATRIX
+      </div>
     </div>
   );
 };
@@ -114,15 +159,14 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Search & Input states
   const [searchQuery, setSearchQuery] = useState('');
   const [clevInput, setClevInput] = useState('');
   const [history, setHistory] = useState([
     { role: 'system', text: '>> CLEV OS v2.0 initialized.' },
-    { role: 'system', text: '>> Neural memory loaded. System ready.' }
+    { role: 'system', text: '>> Neural memory matrix loaded. Type "help" for directives.' }
   ]);
 
-  // Bookmarks State with LocalStorage
+  // Bookmarks State
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
     const saved = localStorage.getItem('CLEV_BOOKMARKS');
     return saved ? JSON.parse(saved) : DEFAULT_BOOKMARKS;
@@ -132,19 +176,18 @@ export default function App() {
   const [newBmUrl, setNewBmUrl] = useState('');
   const [newBmTag, setNewBmTag] = useState('');
 
-  // Memory Matrix State with LocalStorage
+  // Memory Matrix State
   const [memories, setMemories] = useState<string[]>(() => {
     const saved = localStorage.getItem('CLEV_MEMORIES');
     return saved ? JSON.parse(saved) : [
-      'User prefers concise, efficient responses.',
-      'User is building the CLEV Web HUD system.'
+      'User prefers concise, high-efficiency responses.',
+      'User is engineering the CLEV Web HUD system.'
     ];
   });
 
   const endOfHistoryRef = useRef<HTMLDivElement>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Dynamic Greeting based on current hour
   const getGreeting = () => {
     const hour = currentTime.getHours();
     if (hour >= 5 && hour < 12) return 'GOOD MORNING';
@@ -153,28 +196,24 @@ export default function App() {
     return 'GOOD NIGHT';
   };
 
-  // Clock tick
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Save Bookmarks to localStorage
   useEffect(() => {
     localStorage.setItem('CLEV_BOOKMARKS', JSON.stringify(bookmarks));
   }, [bookmarks]);
 
-  // Save Memories to localStorage
   useEffect(() => {
     localStorage.setItem('CLEV_MEMORIES', JSON.stringify(memories));
   }, [memories]);
 
-  // Scroll terminal
   useEffect(() => {
     endOfHistoryRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, mode, isLoading]);
 
-  // Arrow Keys Navigation (Left / Right)
+  // Keyboard Navigation (Arrow Keys Switch Modes)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -190,14 +229,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Handle Home Search
   const handleHomeSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     window.location.href = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
   };
 
-  // Add Bookmark
   const handleAddBookmark = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBmName || !newBmUrl) return;
@@ -214,31 +251,30 @@ export default function App() {
     setNewBmTag('');
   };
 
-  // Delete Bookmark
   const handleDeleteBookmark = (id: string) => {
     setBookmarks(bookmarks.filter(b => b.id !== id));
   };
 
-  // Gemini AI Engine with Memory Matrix
+  // --- Gemini AI Query Engine ---
   const queryAI = async (prompt: string): Promise<string> => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
-      return '>> ERROR: VITE_GEMINI_API_KEY not detected in build environment.';
+      return '>> ERROR: VITE_GEMINI_API_KEY missing in environment variables.';
     }
 
     const memoryContext = memories.length > 0
-      ? `KNOWN USER MEMORIES & CONTEXT:\n${memories.map(m => `- ${m}`).join('\n')}`
+      ? `KNOWN USER MEMORIES:\n${memories.map(m => `- ${m}`).join('\n')}`
       : 'NO MEMORIES STORED YET.';
 
-    const systemInstruction = `You are CLEV, an intelligent, high-performance cyberpunk terminal AI assistant.
+    const systemInstruction = `You are CLEV, an intelligent, sharp, cyberpunk terminal AI assistant.
 ${memoryContext}
 
-Guidelines:
-1. Speak clearly, intelligently, and directly. Avoid corporate boilerplate and generic AI disclaimers (e.g. "As an AI language model").
-2. DO NOT use raw markdown formatting like asterisks (**bold**), headers (###), or underscores. Use clean text formatted for standard CLI terminals.
-3. Keep responses smart, concise, sharp, and helpful.
-4. If the user tells you to remember a new detail about them, end your response with: [REMEMBER: <the fact to remember>]`;
+Rules:
+1. Speak intelligently, clearly, and directly without AI boilerplate or filler.
+2. Do NOT use markdown syntax like asterisks (bold) or hashes (headers). Clean text formatted for terminal screens only.
+3. Keep responses smart, concise, and helpful.
+4. If the user explicitly asks you to remember something, end your response with: [REMEMBER: <fact to store>]`;
 
     try {
       const response = await fetch(
@@ -258,7 +294,6 @@ Guidelines:
       if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
         let text = data.candidates[0].content.parts[0].text;
         
-        // Check if AI generated a memory tag to auto-save
         const rememberMatch = text.match(/\[REMEMBER:\s*(.*?)\]/);
         if (rememberMatch && rememberMatch[1]) {
           const newFact = rememberMatch[1].trim();
@@ -266,17 +301,16 @@ Guidelines:
           text = text.replace(/\[REMEMBER:\s*.*?\]/g, '').trim();
         }
 
-        // Clean up any remaining Markdown tags
         const cleanText = text.replace(/\*\*/g, '').replace(/###/g, '').trim();
         return `>> ${cleanText}`;
       }
-      return '>> ERROR: Unable to process neural request.';
+      return '>> ERROR: Neural link returned empty directive payload.';
     } catch (err) {
-      return '>> ERROR: Gateway connection failed.';
+      return '>> ERROR: Gateway failure.';
     }
   };
 
-  // Terminal Command Handler
+  // --- Terminal Command Dispatcher (Includes Easter Eggs) ---
   const handleClevSubmit = async () => {
     if (!clevInput.trim() || isLoading) return;
 
@@ -286,7 +320,72 @@ Guidelines:
     setHistory(prev => [...prev, { role: 'user', text: `> ${userCommand}` }]);
     setClevInput('');
 
-    // Local Command: Hacker Mode
+    // EASTER EGG 1: Help Directive
+    if (cleanCmd === 'help' || cleanCmd === 'commands') {
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> CLEV DIRECTIVE CATALOG:\n   - hacker mode / exit\n   - memory list / clear / add <fact>\n   - omniview (Hardware HUD Link)\n   - vinyl (Audio Player Status)\n   - ember (Manuscript Protocol)\n   - matrix / sudo / 1000-7' 
+      }]);
+      return;
+    }
+
+    // EASTER EGG 2: OmniView Hardware Link
+    if (cleanCmd === 'omniview') {
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> [OMNIVIEW HUD NODE]\n   Microcontroller: ESP32-S3\n   Voice Link: ONLINE\n   BLE Telemetry: SYNCED\n   Status: Smart glass HUD overlay operational.' 
+      }]);
+      return;
+    }
+
+    // EASTER EGG 3: Vinyl Music Player
+    if (cleanCmd === 'vinyl') {
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> [VINYL PLAYER NODE]\n   Audio Engine: Active\n   Current Rotation:\n   1. C418 - Subwoofer Lullaby\n   2. Radiohead - Motion Picture Soundtrack\n   3. Radiohead - Everything In Its Right Place' 
+      }]);
+      return;
+    }
+
+    // EASTER EGG 4: Enveloped Ember
+    if (cleanCmd === 'ember' || cleanCmd === 'enveloped ember') {
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> [ENVELOPED EMBER PROTOCOL]\n   "In the cold hush of the dying ash, the ember still burns inside..."\n   Manuscript Status: In progress.' 
+      }]);
+      return;
+    }
+
+    // EASTER EGG 5: Tokyo Ghoul
+    if (cleanCmd === '1000-7' || cleanCmd === '1000 - 7' || cleanCmd === 'kaneki') {
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> 993... 986... 979...\n   [ANTEIKU DIRECTIVE OVERRIDE: One-Eyed King recognized.]' 
+      }]);
+      return;
+    }
+
+    // EASTER EGG 6: Sudo Override
+    if (cleanCmd.startsWith('sudo')) {
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> CRITICAL WARNING: ROOT ACCESS ATTEMPT DENIED.\n   This incident will be reported to the system administrator.' 
+      }]);
+      return;
+    }
+
+    // EASTER EGG 7: Matrix Mode
+    if (cleanCmd === 'matrix') {
+      setIsHackerMode(true);
+      setPanelOpen(true);
+      setHistory(prev => [...prev, { 
+        role: 'system', 
+        text: '>> [MATRIX OVERRIDE] Following the white rabbit...\n   01000011 01001100 01000101 01010110' 
+      }]);
+      return;
+    }
+
+    // Standard Commands: Hacker Mode
     if (cleanCmd === 'hacker mode' || cleanCmd === 'enable hacker mode') {
       setIsHackerMode(true);
       setPanelOpen(true);
@@ -306,7 +405,7 @@ Guidelines:
       return;
     }
 
-    // Local Commands: Memory Management
+    // Memory Commands
     if (cleanCmd === 'memory list' || cleanCmd === 'memories') {
       const memList = memories.length > 0
         ? memories.map((m, i) => `   [${i + 1}] ${m}`).join('\n')
@@ -330,7 +429,7 @@ Guidelines:
       return;
     }
 
-    // Minimum 3-second Loader Enforcer
+    // --- Execute AI Query with Mandatory 3s Loader ---
     setIsLoading(true);
     const minLoaderDelay = new Promise(resolve => setTimeout(resolve, 3000));
     
@@ -343,7 +442,6 @@ Guidelines:
     setHistory(prev => [...prev, { role: 'system', text: aiResponse }]);
   };
 
-  // Theme Colors
   const accentText = isHackerMode ? 'text-green-400' : 'text-cyan-400';
   const accentBorder = isHackerMode ? 'border-green-500/40' : 'border-cyan-500/40';
   const accentGlow = isHackerMode ? 'focus-within:border-green-400/80 shadow-[0_0_15px_rgba(34,197,94,0.15)]' : 'focus-within:border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.15)]';
@@ -355,7 +453,7 @@ Guidelines:
 
       <main className="relative z-10 max-w-4xl mx-auto h-screen flex flex-col p-6">
         
-        {/* --- MODE SWITCHER & ARROW INDICATOR --- */}
+        {/* MODE SWITCHER */}
         <div className="flex flex-col items-center justify-center mt-2 mb-6">
           <div className={`flex items-center gap-2 p-1.5 rounded-full border bg-black/60 backdrop-blur-md ${accentBorder}`}>
             <button
@@ -382,10 +480,10 @@ Guidelines:
           </div>
         </div>
 
-        {/* --- VIEW SWITCHING CONTENT --- */}
+        {/* VIEW CONTENT */}
         <AnimatePresence mode="wait">
           {mode === 'home' ? (
-            /* ================= HOME PAGE ================= */
+            /* HOME PAGE */
             <motion.div
               key="home"
               initial={{ opacity: 0, y: 10 }}
@@ -393,7 +491,6 @@ Guidelines:
               exit={{ opacity: 0, y: -10 }}
               className="flex-1 flex flex-col items-center justify-center space-y-6"
             >
-              {/* Dynamic Greeting & HUD Clock */}
               <div className="text-center">
                 <p className={`text-xs font-bold tracking-widest mb-1 ${accentText}`}>
                   {getGreeting()}
@@ -406,7 +503,7 @@ Guidelines:
                 </p>
               </div>
 
-              {/* Google Search Bar */}
+              {/* Search Bar */}
               <form onSubmit={handleHomeSearch} className="w-full max-w-xl">
                 <div className={`flex items-center gap-3 bg-black/70 backdrop-blur-md rounded-xl p-4 border transition-all ${accentBorder} ${accentGlow}`}>
                   <span className={`${accentText} font-bold text-sm`}>{'>'}</span>
@@ -424,7 +521,7 @@ Guidelines:
                 </div>
               </form>
 
-              {/* Bookmarks Section Header */}
+              {/* Bookmarks Bar */}
               <div className="w-full max-w-xl flex justify-between items-center px-1">
                 <span className="text-xs text-zinc-500 tracking-wider">SPEED_DIAL_NODES</span>
                 <button
@@ -435,7 +532,6 @@ Guidelines:
                 </button>
               </div>
 
-              {/* Bookmarks Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-xl">
                 {bookmarks.map((bm) => (
                   <div key={bm.id} className="relative group">
@@ -460,7 +556,6 @@ Guidelines:
                 ))}
               </div>
 
-              {/* Add New Site Panel (Visible in Edit Mode) */}
               {isEditingBookmarks && (
                 <form onSubmit={handleAddBookmark} className={`w-full max-w-xl p-4 border rounded-lg bg-black/80 backdrop-blur-md ${accentBorder} space-y-3`}>
                   <p className="text-xs font-bold text-zinc-400">ADD NEW DIRECTIVE LINK</p>
@@ -497,7 +592,7 @@ Guidelines:
               )}
             </motion.div>
           ) : (
-            /* ================= CLEV AI TERMINAL ================= */
+            /* CLEV TERMINAL */
             <motion.div
               key="clev"
               initial={{ opacity: 0, y: 10 }}
@@ -528,12 +623,7 @@ Guidelines:
                   </p>
                 ))}
 
-                {isLoading && (
-                  <div className={`flex items-center gap-2 ${accentText} animate-pulse`}>
-                    <span className="inline-block w-2 h-2 bg-current rounded-full animate-ping" />
-                    <span>{">>"} Processing neural link directive...</span>
-                  </div>
-                )}
+                {isLoading && <TerminalLoader accentText={accentText} />}
                 <div ref={endOfHistoryRef} />
               </div>
 
@@ -544,7 +634,7 @@ Guidelines:
                   value={clevInput}
                   onChange={(e) => setClevInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleClevSubmit()}
-                  placeholder={isLoading ? "Neural network calculating (3s min delay)..." : "Execute directive... (Try 'memories' or 'remember X')"}
+                  placeholder={isLoading ? "Neural network processing..." : "Execute directive... (Try 'help' or 'omniview')"}
                   disabled={isLoading}
                   className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-zinc-600 text-white disabled:opacity-50"
                   autoFocus
