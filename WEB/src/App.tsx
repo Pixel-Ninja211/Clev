@@ -264,7 +264,7 @@ export default function App() {
 
     try {
       // Voice ID: George (Smooth British Accent)
-      const VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; 
+      const VOICE_ID = 'bAq8AI9QURijOtmeFFqT'; 
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
         method: 'POST',
         headers: {
