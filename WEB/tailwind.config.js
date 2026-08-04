@@ -5,7 +5,19 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        pixel: ['"VT323"', 'monospace'],
+      },
+      colors: {
+        cyber: {
+          green: '#00ff00',
+          cyan: '#06b6d4',
+          dark: '#050505',
+          border: '#00f3ff',
+        },
+      },
+    },
   },
   plugins: [],
 }
