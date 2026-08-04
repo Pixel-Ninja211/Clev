@@ -5,14 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CLEV // ARTIFICIAL INTELLIGENCE</title>
     
-    <!-- 1. TAILWIND CDN (No PostCSS or build step required) -->
+    <!-- 1. RETRO PIXEL FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <!-- 2. TAILWIND CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. Optional: Custom Tailwind config if you use dark mode or custom colors -->
+    <!-- 3. INLINE TAILWIND CONFIG (Includes Pixel Font) -->
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              pixel: ['"VT323"', 'monospace'],
+            },
             colors: {
               cyan: {
                 500: '#06b6d4',
@@ -22,8 +30,31 @@
         }
       }
     </script>
+
+    <!-- 4. CRT SCANLINE EFFECT -->
+    <style>
+      .crt-overlay {
+        pointer-events: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        opacity: 0.15;
+        background: linear-gradient(
+            rgba(18, 16, 16, 0) 50%, 
+            rgba(0, 0, 0, 0.5) 50%
+          ), 
+          linear-gradient(
+            90deg, 
+            rgba(255, 0, 0, 0.06), 
+            rgba(0, 255, 0, 0.02), 
+            rgba(0, 0, 255, 0.06)
+          );
+        background-size: 100% 4px, 3px 100%;
+      }
+    </style>
   </head>
-  <body class="bg-black text-white antialiased">
+  <body class="bg-black text-white antialiased font-pixel text-xl tracking-wider selection:bg-cyan-500 selection:text-black">
+    <div class="crt-overlay"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
