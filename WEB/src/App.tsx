@@ -15,7 +15,7 @@ const DEFAULT_BOOKMARKS: Bookmark[] = [
   { id: '4', name: 'Reddit', url: 'https://reddit.com', tag: 'COMM' },
 ];
 
-// --- Initial Website Boot Splash Screen ---
+// --- Initial Website Boot Loader ---
 const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
   const [logIndex, setLogIndex] = useState(0);
@@ -24,7 +24,7 @@ const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
     'INITIALIZING NEURAL CORE...',
     'ALLOCATING MEMORY MATRIX BUFFERS...',
     'ESTABLISHING OMNIVIEW TELEMETRY LINK...',
-    'SYNCHRONIZING SPEECH SYNTHESIS ENGINE...',
+    'CONNECTING ELEVENLABS AUDIO ENGINE...',
     'SYSTEM BOOT COMPLETE. ENGAGING CLEV AI...'
   ];
 
@@ -213,7 +213,7 @@ export default function App() {
   const [clevInput, setClevInput] = useState('');
   const [history, setHistory] = useState([
     { role: 'system', text: '>> CLEV AI v2.0 initialized.' },
-    { role: 'system', text: '>> Neural memory loaded. Voice synthesis ready. Type "help" for directives.' }
+    { role: 'system', text: '>> ElevenLabs neural voice ready. Type "help" for directives.' }
   ]);
 
   // Bookmarks State
@@ -246,27 +246,62 @@ export default function App() {
     return 'GOOD NIGHT';
   };
 
-  // JARVIS-inspired Voice Engine (Text to Speech)
-  const speakText = (text: string) => {
-    if (!speechEnabled || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
+  // --- ElevenLabs Realistic Voice Engine ---
+  const speakText = async (text: string) => {
+    if (!speechEnabled) return;
 
-    // Clean text for natural speech
+    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
     const cleanSpeech = text
       .replace(/^>>\s*/, '')
       .replace(/[\[\]\(\)\/\\#\*\-_>]/g, ' ')
       .trim();
 
-    const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+    if (!apiKey) {
+      console.warn('ElevenLabs API key missing in environment. Falling back to clean browser voice.');
+      fallbackSpeech(cleanSpeech);
+      return;
+    }
+
+    try {
+      // Voice ID: George (Smooth British Accent)
+      const VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; 
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          text: cleanSpeech,
+          model_id: 'eleven_turbo_v2_5',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`ElevenLabs API Error: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+    } catch (err) {
+      console.error('ElevenLabs Audio Error:', err);
+      fallbackSpeech(cleanSpeech);
+    }
+  };
+
+  // Safe fallback if quota runs out
+  const fallbackSpeech = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
-    utterance.pitch = 0.95; // Deep/Calm tone
-
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(
-      v => v.lang.includes('en') && (v.name.includes('UK') || v.name.includes('Daniel') || v.name.includes('Male') || v.name.includes('Google UK English Male'))
-    );
-    if (preferredVoice) utterance.voice = preferredVoice;
-
+    utterance.pitch = 1.0;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -287,7 +322,7 @@ export default function App() {
     endOfHistoryRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, mode, isLoading]);
 
-  // Keyboard Navigation (Arrow Keys)
+  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -402,7 +437,7 @@ Rules:
       return;
     }
 
-    // EASTER EGG 2: Mentalist Reference (Patrick Jane & Red John)
+    // EASTER EGG 2: Mentalist Reference
     if (cleanCmd.includes('mentalist') || cleanCmd.includes('patrick jane') || cleanCmd.includes('red john') || cleanCmd.includes('tea')) {
       const mentalistText = '>> "There is no such thing as magic. Only observation, manipulation, and a warm cup of Lapsang souchong tea." -- Mentalist Protocol Engaged.';
       setHistory(prev => [...prev, { role: 'system', text: mentalistText }]);
@@ -544,7 +579,7 @@ Rules:
               speechEnabled ? `${accentBorder} ${accentText}` : 'border-zinc-800 text-zinc-600'
             }`}
           >
-            🔊 AUDIO: {speechEnabled ? 'ACTIVE (JARVIS VOICE)' : 'MUTED'}
+            🔊 ELEVENLABS VOICE: {speechEnabled ? 'ACTIVE (JARVIS)' : 'MUTED'}
           </button>
         </div>
 
