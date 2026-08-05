@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Bookmark {
@@ -15,7 +15,7 @@ const DEFAULT_BOOKMARKS: Bookmark[] = [
   { id: '4', name: 'Reddit', url: 'https://reddit.com', tag: 'COMM' },
 ];
 
-// --- Initial Website Boot Loader ---
+// --- Initial Boot Loader ---
 const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
   const [logIndex, setLogIndex] = useState(0);
@@ -48,7 +48,7 @@ const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
       clearInterval(timer);
       clearInterval(logTimer);
     };
-  }, []);
+  }, [onComplete, logs.length]);
 
   const filledBars = Math.floor(progress / 5);
   const progressBar = '█'.repeat(filledBars) + '░'.repeat(20 - filledBars);
@@ -58,7 +58,7 @@ const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
       <div className="max-w-md w-full space-y-4 text-xs">
         <div className="border border-cyan-500/40 p-4 rounded bg-cyan-950/20 backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.15)]">
           <p className="font-bold text-sm tracking-widest text-white mb-2">CLEV AI // SYSTEM BOOT</p>
-          <p className="text-zinc-400">BUILD: v2.0.4-NEURAL</p>
+          <p className="text-zinc-400">BUILD: v2.1.0-HUD</p>
           <div className="my-4 h-12 flex flex-col justify-end text-cyan-300">
             <p className="animate-pulse">{'>'} {logs[logIndex]}</p>
           </div>
@@ -82,7 +82,7 @@ const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-black">
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: `radial-gradient(circle, ${dotColor} 1.5px, transparent 1.5px)`,
           backgroundSize: '28px 28px'
@@ -142,7 +142,7 @@ const BrailleQueryLoader = ({ accentText }: { accentText: string }) => {
       setFrame(f => (f + 1) % spinnerFrames.length);
     }, 80);
     return () => clearInterval(timer);
-  }, []);
+  }, [spinnerFrames.length]);
 
   return (
     <div className={`flex items-center gap-2 ${accentText} my-2 p-3 bg-black/60 border border-white/10 rounded-lg font-mono text-xs animate-pulse`}>
@@ -212,9 +212,13 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [clevInput, setClevInput] = useState('');
   const [history, setHistory] = useState([
-    { role: 'system', text: '>> CLEV AI v2.0 initialized.' },
+    { role: 'system', text: '>> CLEV AI v2.1 initialized.' },
     { role: 'system', text: '>> ElevenLabs neural voice ready. Type "help" for directives.' }
   ]);
+
+  // Terminal Command History Array (Up/Down arrow key navigation)
+  const [cmdHistory, setCmdHistory] = useState<string[]>([]);
+  const [cmdIndex, setCmdIndex] = useState<number>(-1);
 
   // Bookmarks State
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
@@ -236,6 +240,10 @@ export default function App() {
   });
 
   const endOfHistoryRef = useRef<HTMLDivElement>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const terminalInputRef = useRef<HTMLInputElement>(null);
+  
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const getGreeting = () => {
@@ -246,25 +254,38 @@ export default function App() {
     return 'GOOD NIGHT';
   };
 
+  // --- Audio Cleanup Helper ---
+  const stopSpeech = useCallback(() => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
   // --- ElevenLabs Realistic Voice Engine ---
-  const speakText = async (text: string) => {
+  const speakText = useCallback(async (text: string) => {
+    stopSpeech();
     if (!speechEnabled) return;
 
-    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
     const cleanSpeech = text
       .replace(/^>>\s*/, '')
       .replace(/[\[\]\(\)\/\\#\*\-_>]/g, ' ')
       .trim();
 
+    if (!cleanSpeech) return;
+
+    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+
     if (!apiKey) {
-      console.warn('ElevenLabs API key missing in environment. Falling back to clean browser voice.');
       fallbackSpeech(cleanSpeech);
       return;
     }
 
     try {
-      // Voice ID: George (Smooth British Accent)
-      const VOICE_ID = 'bAq8AI9QURijOtmeFFqT'; 
+      const VOICE_ID = 'bAq8AI9QURijOtmeFFqT'; // George (British Accent)
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
         method: 'POST',
         headers: {
@@ -288,17 +309,25 @@ export default function App() {
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      audio.play();
+      currentAudioRef.current = audio;
+
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        if (currentAudioRef.current === audio) {
+          currentAudioRef.current = null;
+        }
+      };
+
+      await audio.play();
     } catch (err) {
       console.error('ElevenLabs Audio Error:', err);
       fallbackSpeech(cleanSpeech);
     }
-  };
+  }, [speechEnabled, stopSpeech]);
 
-  // Safe fallback if quota runs out
+  // Safe fallback speech engine
   const fallbackSpeech = (text: string) => {
     if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
@@ -322,7 +351,7 @@ export default function App() {
     endOfHistoryRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, mode, isLoading]);
 
-  // Keyboard Navigation
+  // Global Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -331,12 +360,19 @@ export default function App() {
       if (!isInputActive) {
         if (e.key === 'ArrowLeft') setMode('home');
         if (e.key === 'ArrowRight') setMode('clev');
+        if (e.key === '/' || (e.ctrlKey && e.key === 'k')) {
+          e.preventDefault();
+          if (mode === 'home') searchInputRef.current?.focus();
+          else terminalInputRef.current?.focus();
+        }
+      } else if (e.key === 'Escape') {
+        (activeEl as HTMLElement).blur();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [mode]);
 
   const handleHomeSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,10 +409,10 @@ export default function App() {
     }
 
     const memoryContext = memories.length > 0
-      ? `KNOWN USER MEMORIES:\n${memories.map(m => `- ${m}`).join('\n')}`
+      ? `KNOWN USER MEMORIES:\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n')}`
       : 'NO MEMORIES STORED YET.';
 
-    const systemInstruction = `You are CLEV, a sharp, intelligent, JARVIS-inspired AI assistant.
+    const systemInstruction = `You are CLEV, a sharp, intelligent, JARVIS-inspired HUD assistant.
 ${memoryContext}
 
 Rules:
@@ -387,7 +423,7 @@ Rules:
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -415,7 +451,7 @@ Rules:
       }
       return '>> ERROR: Neural link returned empty directive payload.';
     } catch (err) {
-      return '>> ERROR: Gateway failure.';
+      return '>> ERROR: Neural gateway connection failure.';
     }
   };
 
@@ -425,6 +461,10 @@ Rules:
 
     const userCommand = clevInput.trim();
     const cleanCmd = userCommand.toLowerCase();
+
+    // Store in input history buffer
+    setCmdHistory(prev => [...prev, userCommand]);
+    setCmdIndex(-1);
 
     setHistory(prev => [...prev, { role: 'user', text: `> ${userCommand}` }]);
     setClevInput('');
@@ -447,7 +487,7 @@ Rules:
 
     // EASTER EGG 3: Help Directive
     if (cleanCmd === 'help' || cleanCmd === 'commands') {
-      const helpText = '>> CLEV AI DIRECTIVE CATALOG:\n   - jarvis / mentalist (Special protocols)\n   - hacker mode / exit\n   - memory list / clear / add <fact>\n   - omniview (Hardware HUD Link)\n   - vinyl (Audio Player Node)\n   - ember (Manuscript Protocol)\n   - 1000-7 / matrix / sudo';
+      const helpText = '>> CLEV AI DIRECTIVE CATALOG:\n   - jarvis / mentalist (Special protocols)\n   - hacker mode / exit\n   - memory list / clear / add <fact> / remove <num>\n   - omniview (Hardware HUD Link)\n   - vinyl (Audio Player Node)\n   - ember (Manuscript Protocol)\n   - 1000-7 / matrix / sudo';
       setHistory(prev => [...prev, { role: 'system', text: helpText }]);
       speakText('Catalog printed to terminal window.');
       return;
@@ -509,6 +549,7 @@ Rules:
       return;
     }
 
+    // Memory commands
     if (cleanCmd === 'memory list' || cleanCmd === 'memories') {
       const memList = memories.length > 0
         ? memories.map((m, i) => `   [${i + 1}] ${m}`).join('\n')
@@ -518,9 +559,43 @@ Rules:
       return;
     }
 
+    if (cleanCmd.startsWith('memory add ')) {
+      const newFact = userCommand.slice(11).trim();
+      if (newFact) {
+        setMemories(prev => [...prev, newFact]);
+        const msg = `>> MEMORY STORED: "${newFact}"`;
+        setHistory(prev => [...prev, { role: 'system', text: msg }]);
+        speakText('Memory entry recorded successfully.');
+      }
+      return;
+    }
+
+    if (cleanCmd.startsWith('memory remove ') || cleanCmd.startsWith('memory delete ')) {
+      const idxStr = cleanCmd.replace('memory remove ', '').replace('memory delete ', '').trim();
+      const idx = parseInt(idxStr, 10) - 1;
+      if (!isNaN(idx) && idx >= 0 && idx < memories.length) {
+        const removed = memories[idx];
+        setMemories(prev => prev.filter((_, i) => i !== idx));
+        const msg = `>> MEMORY PURGED: "${removed}"`;
+        setHistory(prev => [...prev, { role: 'system', text: msg }]);
+        speakText('Memory index purged.');
+      } else {
+        setHistory(prev => [...prev, { role: 'system', text: '>> ERROR: Invalid memory index specified.' }]);
+      }
+      return;
+    }
+
+    if (cleanCmd === 'memory clear') {
+      setMemories([]);
+      const msg = '>> MEMORY MATRIX WIPED CLEAN.';
+      setHistory(prev => [...prev, { role: 'system', text: msg }]);
+      speakText('All memories cleared.');
+      return;
+    }
+
     // --- AI Query Execution ---
     setIsLoading(true);
-    const minLoaderDelay = new Promise(resolve => setTimeout(resolve, 3000));
+    const minLoaderDelay = new Promise(resolve => setTimeout(resolve, 1500));
     
     const [aiResponse] = await Promise.all([
       queryAI(userCommand),
@@ -530,6 +605,30 @@ Rules:
     setIsLoading(false);
     setHistory(prev => [...prev, { role: 'system', text: aiResponse }]);
     speakText(aiResponse);
+  };
+
+  // Up/Down key history navigation handler
+  const handleClevKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleClevSubmit();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (cmdHistory.length === 0) return;
+      const nextIndex = cmdIndex === -1 ? cmdHistory.length - 1 : Math.max(0, cmdIndex - 1);
+      setCmdIndex(nextIndex);
+      setClevInput(cmdHistory[nextIndex]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (cmdIndex === -1) return;
+      const nextIndex = cmdIndex + 1;
+      if (nextIndex >= cmdHistory.length) {
+        setCmdIndex(-1);
+        setClevInput('');
+      } else {
+        setCmdIndex(nextIndex);
+        setClevInput(cmdHistory[nextIndex]);
+      }
+    }
   };
 
   const accentText = isHackerMode ? 'text-green-400' : 'text-cyan-400';
@@ -574,7 +673,10 @@ Rules:
           </div>
 
           <button
-            onClick={() => setSpeechEnabled(!speechEnabled)}
+            onClick={() => {
+              if (speechEnabled) stopSpeech();
+              setSpeechEnabled(!speechEnabled);
+            }}
             className={`text-[10px] tracking-widest px-3 py-1 border rounded-full bg-black/60 backdrop-blur-md cursor-pointer transition-all ${
               speechEnabled ? `${accentBorder} ${accentText}` : 'border-zinc-800 text-zinc-600'
             }`}
@@ -602,7 +704,7 @@ Rules:
                   {currentTime.toLocaleTimeString()}
                 </h2>
                 <p className="text-xs mt-2 tracking-widest text-zinc-500">
-                  SYSTEM_AI // OPERATIONAL
+                  {currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase()} // SYSTEM_AI
                 </p>
               </div>
 
@@ -611,14 +713,15 @@ Rules:
                 <div className={`flex items-center gap-3 bg-black/70 backdrop-blur-md rounded-xl p-4 border transition-all ${accentBorder} ${accentGlow}`}>
                   <span className={`${accentText} font-bold text-sm`}>{'>'}</span>
                   <input
+                    ref={searchInputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search query or enter web directive..."
+                    placeholder="Search query or enter web directive... (Press '/' to focus)"
                     className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-zinc-600 text-white"
                     autoFocus
                   />
-                  <button type="submit" className={`text-xs px-3 py-1 rounded border ${accentBorder} ${accentText} hover:bg-white/10`}>
+                  <button type="submit" className={`text-xs px-3 py-1 rounded border ${accentBorder} ${accentText} hover:bg-white/10 cursor-pointer`}>
                     EXECUTE
                   </button>
                 </div>
@@ -687,7 +790,7 @@ Rules:
                   </div>
                   <button
                     type="submit"
-                    className={`w-full py-1.5 text-xs font-bold border rounded ${accentBorder} ${accentText} hover:bg-white/10`}
+                    className={`w-full py-1.5 text-xs font-bold border rounded ${accentBorder} ${accentText} hover:bg-white/10 cursor-pointer`}
                   >
                     + ADD SITE
                   </button>
@@ -715,13 +818,13 @@ Rules:
                 </div>
               </div>
 
-              <div className={`flex-1 overflow-y-auto mb-4 p-4 border bg-black/60 backdrop-blur-md rounded-lg ${accentBorder} space-y-3`}>
+              <div className={`flex-1 overflow-y-auto mb-4 p-4 border bg-black/60 backdrop-blur-md rounded-lg ${accentBorder} space-y-3 font-mono`}>
                 <div className="text-xs text-zinc-500 mb-4 tracking-widest border-b border-white/10 pb-2">
                   NEURAL_LINK_TERMINAL // LOGS
                 </div>
                 
                 {history.map((log, index) => (
-                  <p key={index} className={`whitespace-pre-wrap ${log.role === 'user' ? 'text-zinc-200' : accentText}`}>
+                  <p key={index} className={`whitespace-pre-wrap leading-relaxed ${log.role === 'user' ? 'text-zinc-200' : accentText}`}>
                     {log.text}
                   </p>
                 ))}
@@ -733,10 +836,11 @@ Rules:
               <div className={`flex items-center gap-3 bg-black/70 backdrop-blur-md rounded-lg p-3 border transition-colors ${accentBorder} ${accentGlow}`}>
                 <div className={`w-2.5 h-2.5 ${isHackerMode ? 'bg-green-400' : 'bg-cyan-400'} animate-pulse rounded-sm`} />
                 <input
+                  ref={terminalInputRef}
                   type="text"
                   value={clevInput}
                   onChange={(e) => setClevInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleClevSubmit()}
+                  onKeyDown={handleClevKeyDown}
                   placeholder={isLoading ? "Neural processing..." : "Execute directive... (Try 'jarvis', 'mentalist', or 'help')"}
                   disabled={isLoading}
                   className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-zinc-600 text-white disabled:opacity-50"
