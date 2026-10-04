@@ -1,0 +1,27 @@
+[package]
+name = "clev"
+version = "1.0.0"
+description = "Clev — jolly AI desktop companion widget"
+authors = ["Clev Team"]
+edition = "2021"
+
+[lib]
+name = "clev_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-global-shortcut = "2"   # Ctrl+Alt+C summons Clev from anywhere
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sysinfo = "0.32"                     # REAL OS hardware telemetry (no fake panels)
+
+[target.'cfg(windows)'.dependencies]
+# Real active-window / media-title detection for vibe-checking
+windows = { version = "0.58", features = [
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+] }
