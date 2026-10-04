@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DesktopPet from './components/DesktopPet';
 
 interface Bookmark {
   id: string;
@@ -56,7 +57,7 @@ const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center font-mono text-cyan-400 p-6 selection:bg-cyan-500/30">
       <div className="max-w-md w-full space-y-4 text-xs">
-        <div className="border border-cyan-500/40 p-4 rounded bg-cyan-950/20 backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+        <div className="border border-cyan-500/40 p-6 rounded-xl bg-cyan-950/20 backdrop-blur-md shadow-[0_0_60px_rgba(6,182,212,0.25)]">
           <p className="font-bold text-sm tracking-widest text-white mb-2">CLEV AI // SYSTEM BOOT</p>
           <p className="text-zinc-400">BUILD: v2.0.4-NEURAL</p>
           <div className="my-4 h-12 flex flex-col justify-end text-cyan-300">
@@ -77,59 +78,108 @@ const BootLoader = ({ onComplete }: { onComplete: () => void }) => {
 
 // --- Multi-Colored Background Shapes FX ---
 const BackgroundFX = ({ isHackerMode }: { isHackerMode: boolean }) => {
-  const dotColor = isHackerMode ? 'rgba(34, 197, 94, 0.25)' : 'rgba(6, 182, 212, 0.25)';
+  const accent = isHackerMode ? 'rgba(34, 197, 94,' : 'rgba(6, 182, 212,';
+  const dotColor = `${accent} 0.22)`;
 
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-black">
-      <div 
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `radial-gradient(circle, ${dotColor} 1.5px, transparent 1.5px)`,
-          backgroundSize: '28px 28px'
-        }}
-      />
-      
-      {/* Neon Purple Circle */}
-      <motion.div
-        className="absolute top-1/6 left-10 w-56 h-56 border-2 rounded-full border-purple-500/30 shadow-[0_0_25px_rgba(168,85,247,0.15)]"
-        animate={{ y: [0, -35, 0], x: [0, 25, 0], rotate: [0, 360] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-      />
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-black">
+      {/* Deep radial wash */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isHackerMode
+            ? 'radial-gradient(ellipse at 50% -20%, rgba(20,83,45,0.55) 0%, rgba(0,0,0,0) 60%), radial-gradient(ellipse at 50% 120%, rgba(6,78,56,0.4) 0%, rgba(0,0,0,0) 55%)'
+            : 'radial-gradient(ellipse at 50% -20%, rgba(8,51,68,0.6) 0%, rgba(0,0,0,0) 60%), radial-gradient(ellipse at 50% 120%, rgba(30,27,75,0.45) 0%, rgba(0,0,0,0) 55%)',
+        }}
+      />
 
-      {/* Warm Amber Square */}
-      <motion.div
-        className="absolute bottom-1/6 right-12 w-44 h-44 border-2 border-amber-500/30 shadow-[0_0_25px_rgba(245,158,11,0.15)]"
-        animate={{ y: [0, 45, 0], x: [0, -35, 0], rotate: [0, -180] }}
-        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-      />
+      {/* Drifting aurora blobs */}
+      <motion.div
+        className={`absolute -top-32 -left-32 w-[34rem] h-[34rem] rounded-full blur-[120px] ${isHackerMode ? 'bg-emerald-600/25' : 'bg-cyan-600/25'}`}
+        animate={{ x: [0, 120, -40, 0], y: [0, 60, 120, 0], scale: [1, 1.15, 0.95, 1] }}
+        transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute top-1/3 -right-40 w-[30rem] h-[30rem] rounded-full blur-[130px] bg-fuchsia-600/15"
+        animate={{ x: [0, -90, 30, 0], y: [0, 80, -60, 0], scale: [1, 1.2, 0.9, 1] }}
+        transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute -bottom-40 left-1/4 w-[28rem] h-[28rem] rounded-full blur-[120px] bg-indigo-600/15"
+        animate={{ x: [0, 70, -50, 0], y: [0, -50, 30, 0] }}
+        transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
+      />
 
-      {/* Glowing Indigo Rectangle */}
-      <motion.div
-        className="absolute top-1/2 left-12 w-64 h-28 border-2 border-indigo-500/30 rounded-lg shadow-[0_0_25px_rgba(99,102,241,0.15)]"
-        animate={{ x: [0, 30, 0], y: [0, -20, 0], rotate: [0, 10, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-      />
+      {/* Dot matrix */}
+      <div
+        className="absolute inset-0 opacity-60"
+        style={{
+          backgroundImage: `radial-gradient(circle, ${dotColor} 1.5px, transparent 1.5px)`,
+          backgroundSize: '28px 28px',
+          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
+        }}
+      />
 
-      {/* Pink/Magenta Triangle */}
-      <motion.svg
-        viewBox="0 0 100 100"
-        className="absolute top-1/3 right-1/4 w-36 h-36 fill-transparent stroke-2 stroke-pink-500/30 drop-shadow-[0_0_10px_rgba(236,72,153,0.2)]"
-        animate={{ y: [0, -50, 0], rotate: [0, 180, 360] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-      >
-        <polygon points="50,10 90,90 10,90" />
-      </motion.svg>
+      {/* Perspective neon grid floor */}
+      <div className="absolute bottom-0 left-0 right-0 h-64 overflow-hidden opacity-40" style={{ perspective: '420px' }}>
+        <div
+          className="absolute inset-x-[-60%] bottom-[-40%] h-[150%] origin-bottom"
+          style={{
+            transform: 'rotateX(64deg)',
+            backgroundImage: `linear-gradient(${accent} 0.35) 1px, transparent 1px), linear-gradient(90deg, ${accent} 0.35) 1px, transparent 1px)`,
+            backgroundSize: '48px 48px',
+            maskImage: 'linear-gradient(to top, black 20%, transparent 90%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 90%)',
+            animation: 'gridScroll 6s linear infinite',
+          }}
+        />
+      </div>
 
-      {/* Gold Plus Crosshair */}
-      <motion.div
-        className="absolute bottom-1/3 left-1/4 text-3xl font-mono text-yellow-400/40"
-        animate={{ scale: [1, 1.25, 1], rotate: [0, 90, 180] }}
-        transition={{ duration: 16, repeat: Infinity }}
-      >
-        +
-      </motion.div>
-    </div>
-  );
+      {/* Neon Purple Circle */}
+      <motion.div
+        className="absolute top-1/6 left-10 w-56 h-56 border-2 rounded-full border-purple-500/30 shadow-[0_0_45px_rgba(168,85,247,0.25)]"
+        animate={{ y: [0, -35, 0], x: [0, 25, 0], rotate: [0, 360] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+      />
+
+      {/* Warm Amber Square */}
+      <motion.div
+        className="absolute bottom-1/6 right-12 w-44 h-44 border-2 border-amber-500/30 shadow-[0_0_45px_rgba(245,158,11,0.22)]"
+        animate={{ y: [0, 45, 0], x: [0, -35, 0], rotate: [0, -180] }}
+        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+      />
+
+      {/* Glowing Indigo Rectangle */}
+      <motion.div
+        className="absolute top-1/2 left-12 w-64 h-28 border-2 border-indigo-500/30 rounded-lg shadow-[0_0_45px_rgba(99,102,241,0.22)]"
+        animate={{ x: [0, 30, 0], y: [0, -20, 0], rotate: [0, 10, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Pink/Magenta Triangle */}
+      <motion.svg
+        viewBox="0 0 100 100"
+        className="absolute top-1/3 right-1/4 w-36 h-36 fill-transparent stroke-2 stroke-pink-500/30 drop-shadow-[0_0_18px_rgba(236,72,153,0.3)]"
+        animate={{ y: [0, -50, 0], rotate: [0, 180, 360] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+      >
+        <polygon points="50,10 90,90 10,90" />
+      </motion.svg>
+
+      {/* Gold Plus Crosshair */}
+      <motion.div
+        className="absolute bottom-1/3 left-1/4 text-3xl font-mono text-yellow-400/40"
+        animate={{ scale: [1, 1.25, 1], rotate: [0, 90, 180] }}
+        transition={{ duration: 16, repeat: Infinity }}
+      >
+        +
+      </motion.div>
+
+      {/* Vignette for depth */}
+      <div className="absolute inset-0" style={{ boxShadow: 'inset 0 0 180px 60px rgba(0,0,0,0.85)' }} />
+    </div>
+  );
 };
 
 // --- Braille Query Processing Loader ---
@@ -208,6 +258,8 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [clevInput, setClevInput] = useState('');
@@ -246,66 +298,150 @@ export default function App() {
     return 'GOOD NIGHT';
   };
 
-  // --- ElevenLabs Realistic Voice Engine ---
-  const speakText = async (text: string) => {
-    if (!speechEnabled) return;
+    // --- ElevenLabs Realistic Voice Engine (FIXED) ---
+  // Fixes applied:
+  //  1. Uses the streaming endpoint (?output_format=mp3_44100_128) -> faster first byte, no hangs.
+  //  2. Sends the required "Accept: audio/mpeg" header (missing it caused silent failures).
+  //  3. Validates the API key BEFORE fetching and surfaces real ElevenLabs error payloads.
+  //  4. Cancels any in-flight speech before starting new speech (no overlapping/queued voices).
+  //  5. Revokes blob object URLs to prevent memory leaks.
+  //  6. Handles browser autoplay policy: retries playback on the next user gesture.
+  //  7. Always falls back cleanly to the browser SpeechSynthesis voice on ANY failure.
+  const speechAbortRef = useRef<AbortController | null>(null);
 
-    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-    const cleanSpeech = text
-      .replace(/^>>\s*/, '')
-      .replace(/[\[\]\(\)\/\\#\*\-_>]/g, ' ')
-      .trim();
+  const stopSpeech = () => {
+    speechAbortRef.current?.abort();
+    speechAbortRef.current = null;
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
 
-    if (!apiKey) {
-      console.warn('ElevenLabs API key missing in environment. Falling back to clean browser voice.');
-      fallbackSpeech(cleanSpeech);
-      return;
-    }
+  const fallbackSpeech = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    const preferred =
+      voices.find(v => /google uk english male|daniel|arthur|george/i.test(v.name)) ||
+      voices.find(v => v.lang.startsWith('en-GB')) ||
+      voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utterance.voice = preferred;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
 
-    try {
-      // Voice ID: George (Smooth British Accent)
-      const VOICE_ID = 'bAq8AI9QURijOtmeFFqT'; 
-      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'xi-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          text: cleanSpeech,
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-        }),
-      });
+  const speakText = async (text: string) => {
+    if (!speechEnabled) return;
 
-      if (!response.ok) {
-        throw new Error(`ElevenLabs API Error: ${response.status}`);
-      }
+    const cleanSpeech = text
+      .replace(/^>>\s*/, '')
+      .replace(/[\[\]\(\)\/\\#\*\-_>]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.play();
-    } catch (err) {
-      console.error('ElevenLabs Audio Error:', err);
-      fallbackSpeech(cleanSpeech);
-    }
-  };
+    if (!cleanSpeech) return;
 
-  // Safe fallback if quota runs out
-  const fallbackSpeech = (text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    window.speechSynthesis.speak(utterance);
-  };
+    // Stop anything currently talking before we start a new utterance.
+    stopSpeech();
 
-  useEffect(() => {
+    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY as string | undefined;
+
+    // FIX: previously an invalid/placeholder key still fired the request and
+    // failed silently. Now we short-circuit straight to the browser voice.
+    if (!apiKey || apiKey.trim().length < 20 || apiKey.includes('YOUR_')) {
+      console.warn('[CLEV VOICE] VITE_ELEVENLABS_API_KEY missing or placeholder. Using browser voice fallback.');
+      fallbackSpeech(cleanSpeech);
+      return;
+    }
+
+    // Voice ID: George (Smooth British Accent)
+    const VOICE_ID = 'bAq8AI9QURijOtmeFFqT';
+    const controller = new AbortController();
+    speechAbortRef.current = controller;
+
+    try {
+      const response = await fetch(
+        // FIX: streaming TTS endpoint + explicit output format.
+        `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?output_format=mp3_44100_128`,
+        {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Accept': 'audio/mpeg', // FIX: required by ElevenLabs for streamed audio
+            'Content-Type': 'application/json',
+            'xi-api-key': apiKey.trim(),
+          },
+          body: JSON.stringify({
+            text: cleanSpeech,
+            model_id: 'eleven_turbo_v2_5',
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.75,
+              style: 0.35,
+              use_speaker_boost: true,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        // FIX: read and log the actual error payload from ElevenLabs
+        // (e.g. quota exceeded, invalid key, voice not found) instead of a bare status code.
+        let detail = '';
+        try { detail = JSON.stringify(await response.json()); } catch { /* non-json error body */ }
+        throw new Error(`ElevenLabs API ${response.status}: ${detail}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      currentAudioRef.current = audio;
+
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl); // FIX: prevent blob memory leak
+        setIsSpeaking(false);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsSpeaking(false);
+        fallbackSpeech(cleanSpeech);
+      };
+
+      setIsSpeaking(true);
+      try {
+        await audio.play();
+      } catch (playErr) {
+        // FIX: browsers block audio without a user gesture. Retry once on the
+        // next click/keypress instead of failing silently forever.
+        console.warn('[CLEV VOICE] Autoplay blocked; will retry on next interaction.', playErr);
+        const unlock = () => {
+          audio.play().catch(() => fallbackSpeech(cleanSpeech));
+          window.removeEventListener('pointerdown', unlock);
+          window.removeEventListener('keydown', unlock);
+        };
+        window.addEventListener('pointerdown', unlock);
+        window.addEventListener('keydown', unlock);
+      }
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') return; // intentional cancel, stay quiet
+      console.error('[CLEV VOICE] ElevenLabs error, falling back:', err);
+      setIsSpeaking(false);
+      fallbackSpeech(cleanSpeech);
+    }
+  };
+
+  // Stop all speech when the component unmounts.
+  useEffect(() => stopSpeech, []);
+
+  useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -392,9 +528,10 @@ Rules:
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [
-              { role: 'user', parts: [{ text: `${systemInstruction}\n\nUser input: ${prompt}` }] }
-            ]
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              contents: [
+                { role: 'user', parts: [{ text: prompt }] }
+              ]
           })
         }
       );
@@ -534,7 +671,7 @@ Rules:
 
   const accentText = isHackerMode ? 'text-green-400' : 'text-cyan-400';
   const accentBorder = isHackerMode ? 'border-green-500/40' : 'border-cyan-500/40';
-  const accentGlow = isHackerMode ? 'focus-within:border-green-400/80 shadow-[0_0_15px_rgba(34,197,94,0.15)]' : 'focus-within:border-cyan-400/80 shadow-[0_0_15px_rgba(6,182,212,0.15)]';
+  const accentGlow = isHackerMode ? 'focus-within:border-green-400/80 focus-within:shadow-[0_0_30px_rgba(34,197,94,0.25)]' : 'focus-within:border-cyan-400/80 focus-within:shadow-[0_0_30px_rgba(6,182,212,0.25)]';
 
   if (isBooting) {
     return <BootLoader onComplete={() => setIsBooting(false)} />;
@@ -544,12 +681,13 @@ Rules:
     <div className="min-h-screen bg-black text-white font-mono overflow-hidden relative selection:bg-white/20">
       <BackgroundFX isHackerMode={isHackerMode} />
       <LiveFeedPanel isOpen={panelOpen} toggle={() => setPanelOpen(!panelOpen)} isHackerMode={isHackerMode} />
+      <DesktopPet isHackerMode={isHackerMode} isThinking={isLoading} isSpeaking={isSpeaking} />
 
       <main className="relative z-10 max-w-4xl mx-auto h-screen flex flex-col p-6">
         
         {/* TOP BAR SWITCHER & VOICE TOGGLE */}
         <div className="flex flex-col items-center justify-center mt-2 mb-6 gap-3">
-          <div className={`flex items-center gap-2 p-1.5 rounded-full border bg-black/60 backdrop-blur-md ${accentBorder}`}>
+          <div className={`flex items-center gap-2 p-1.5 rounded-full border bg-black/60 backdrop-blur-xl shadow-[0_0_25px_rgba(0,0,0,0.6)] ${accentBorder}`}>
             <button
               onClick={() => setMode('home')}
               className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-300 cursor-pointer ${
@@ -579,7 +717,7 @@ Rules:
               speechEnabled ? `${accentBorder} ${accentText}` : 'border-zinc-800 text-zinc-600'
             }`}
           >
-            🔊 ELEVENLABS VOICE: {speechEnabled ? 'ACTIVE (JARVIS)' : 'MUTED'}
+            {speechEnabled ? (isSpeaking ? '🔊 VOICE OUTPUT: SPEAKING...' : '🔊 ELEVENLABS VOICE: ACTIVE (JARVIS)') : '🔇 VOICE: MUTED'}
           </button>
         </div>
 
@@ -598,9 +736,12 @@ Rules:
                 <p className={`text-xs font-bold tracking-widest mb-1 ${accentText}`}>
                   {getGreeting()}
                 </p>
-                <h2 className="text-6xl font-extrabold tracking-widest text-white drop-shadow-md">
-                  {currentTime.toLocaleTimeString()}
-                </h2>
+                <h2 className="text-7xl sm:text-8xl font-extrabold tracking-widest bg-gradient-to-b from-white via-white to-zinc-500 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(255,255,255,0.12)]">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </h2>
+              <p className="text-[11px] mt-1 tracking-[0.4em] text-zinc-400 uppercase">
+                {currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
                 <p className="text-xs mt-2 tracking-widest text-zinc-500">
                   SYSTEM_AI // OPERATIONAL
                 </p>
@@ -642,7 +783,7 @@ Rules:
                       href={bm.url}
                       target="_blank"
                       rel="noreferrer"
-                      className={`p-3 bg-black/50 backdrop-blur-md border rounded-lg transition-all hover:-translate-y-1 ${accentBorder} hover:border-white/40 flex flex-col justify-between h-20 block`}
+                      className={`p-3 bg-gradient-to-br from-white/[0.06] to-transparent backdrop-blur-md border rounded-xl transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.03] ${accentBorder} hover:border-white/50 hover:shadow-[0_10px_30px_-10px_rgba(6,182,212,0.35)] flex flex-col justify-between h-20 block`}
                     >
                       <span className="text-xs text-zinc-500 font-semibold">{bm.tag}</span>
                       <span className="text-sm font-bold text-zinc-200 truncate">{bm.name}</span>
@@ -705,8 +846,8 @@ Rules:
             >
               <div className="mb-4 flex justify-between items-center">
                 <div>
-                  <h1 className={`text-xl font-bold tracking-widest ${accentText}`}>
-                    CLEV // SYSTEM_AI
+                  <h1 className={`text-2xl font-extrabold tracking-widest bg-gradient-to-r ${isHackerMode ? 'from-green-300 via-green-400 to-emerald-600' : 'from-cyan-200 via-cyan-400 to-blue-500'} bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(6,182,212,0.35)]`}>
+                    CLEV // SYSTEM_AI {isSpeaking && <span className="animate-pulse">◉</span>}
                   </h1>
                   <p className="text-xs text-zinc-500">DIRECTIVE_BASED_AI_NODE</p>
                 </div>
@@ -715,7 +856,7 @@ Rules:
                 </div>
               </div>
 
-              <div className={`flex-1 overflow-y-auto mb-4 p-4 border bg-black/60 backdrop-blur-md rounded-lg ${accentBorder} space-y-3`}>
+              <div className={`flex-1 overflow-y-auto mb-4 p-4 border bg-black/40 backdrop-blur-xl rounded-xl ${accentBorder} space-y-3 shadow-[inset_0_0_40px_rgba(0,0,0,0.6)]`}>
                 <div className="text-xs text-zinc-500 mb-4 tracking-widest border-b border-white/10 pb-2">
                   NEURAL_LINK_TERMINAL // LOGS
                 </div>
